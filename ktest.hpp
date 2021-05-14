@@ -78,8 +78,7 @@ class runner_t {
 
 namespace detail {
 struct test_fail : std::runtime_error {
-	test_fail() : std::runtime_error("failed") {
-	}
+	test_fail() : std::runtime_error("failed") {}
 };
 struct equals {
 	template <typename T, typename U>
@@ -95,13 +94,10 @@ struct not_equals {
 };
 } // namespace detail
 
-inline runner_t::runner_t(test_map_t tests) : m_tests(std::move(tests)) {
-}
+inline runner_t::runner_t(test_map_t tests) : m_tests(std::move(tests)) {}
 inline int runner_t::run(bool async) {
 	std::vector<std::future<void>> futures;
-	if (async) {
-		futures.reserve(m_tests.size());
-	}
+	if (async) { futures.reserve(m_tests.size()); }
 	std::atomic<std::size_t> passed, failed;
 	passed.store(0);
 	failed.store(0);
@@ -128,15 +124,12 @@ inline int runner_t::run(bool async) {
 		m_ret = 1;
 	}
 	for (auto& future : futures) {
-		if (future.valid()) {
-			future.get();
-		}
+		if (future.valid()) { future.get(); }
 	}
 	std::cout << "[dtest] tests: " << m_tests.size() << " | " << passed.load() << " passed | " << failed.load() << " failed" << std::endl;
 	return m_ret;
 }
-inline executor_t::executor_t(std::string_view name) : m_name(name) {
-}
+inline executor_t::executor_t(std::string_view name) : m_name(name) {}
 inline void executor_t::fail() const {
 	std::string log = "[dtest] ";
 	log += m_name;
@@ -146,15 +139,11 @@ inline void executor_t::fail() const {
 }
 template <typename T, typename U>
 void executor_t::expect_eq(T const& t, U const& u) const noexcept {
-	if (!(t == u)) {
-		fail();
-	}
+	if (!(t == u)) { fail(); }
 }
 template <typename T, typename U>
 void executor_t::expect_neq(T const& t, U const& u) const noexcept {
-	if (!(t != u)) {
-		fail();
-	}
+	if (!(t != u)) { fail(); }
 }
 template <typename T, typename U>
 void executor_t::assert_eq(T const& t, U const& u) const {
