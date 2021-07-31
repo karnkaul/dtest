@@ -1,4 +1,4 @@
-## ktest
+## dtest
 
 Tiny test harness library in C++17.
 
@@ -13,7 +13,6 @@ Tiny test harness library in C++17.
 
 ## Limitations
 
-1. Max tests (configurable; this is because the backing store is a fixed-size array that's populated before `main()`)
 1. No sub-tests / test cases / test groups
 1. Global / per-test environment
 
@@ -26,48 +25,70 @@ Tiny test harness library in C++17.
 
 ### Steps
 
-1. Clone repo to appropriate subdirectory, say `ktest`
-1. Add library to project via: `add_subdirectory(ktest)`
-1. To use just the test engine, link to `ktest::ktest`: `target_link_libraries(foo ktest::ktest)`, and in `main()` call `ktests::run_tests(bool async)`
-1. To also use the built-in main function, link to `ktest::main`: `target_link_libraries(foo ktest::main)`
-1. Use via: `#include <ktest/ktest.hpp>`
+1. Clone repo to appropriate subdirectory, say `dtest`
+1. Add library to project via: `add_subdirectory(dtest)`
+1. To use just the test engine, link to `dtest::dtest`: `target_link_libraries(foo dtest::dtest)`, and in `main()` call `dtests::run_tests(bool async)`
+1. To also use the built-in main function, link to `dtest::main`: `target_link_libraries(foo dtest::main)`
+1. Use via: `#include <dumb_test/dtest.hpp>`
 
 ### Examples
 
 ```cmake
-add_executable(foo test.cpp)
-target_link_libraries(foo PRIVATE ktest::main)
+add_executable(foo dtest_demo.cpp)
+target_link_libraries(foo PRIVATE dtest::main)
 ```
 
 ```cpp
-// test.cpp
+// dtest_demo.cpp
+#include <dumb_test/dtest.hpp>
 
+namespace {
 TEST(foo_test) {
   int const arr[] = {0, 1, 2};
-  ASSERT_EQ(sizeof(arr) / sizeof(int), 3); // stops further execution if assertion fails
-  EXPECT_EQ(arr[0], 0); // records test failure and continues execution
+  ASSERT_EQ(sizeof(arr) / sizeof(int), 3U); // stops further execution if assertion fails
+  EXPECT_EQ(arr[0], 0);                     // records test failure and continues execution
 }
+
+struct f {
+  int val{};
+};
+bool operator==(f a, f b) { return a.val == b.val; }
+
+TEST(fail_test) {
+  char const* x = "hi";
+  std::string_view const y = "hello";
+  EXPECT_EQ(x, y);  // prints values
+  EXPECT_EQ(&x, nullptr); // prints address and "nullptr"
+  f const a{99};
+  f const b{-42};
+  EXPECT_EQ(a, b);  // prints failed expression (a == b)
+}
+} // namespace
 ```
 
 Output:
 
 ```
-[======] starting 1 tests
+[======] starting 2 tests
 [ pass ] foo_test
-[======] completed 1 tests (0.1ms)
-[ pass ] 1 / 1
+[ FAIL ] fail_test
+        expected: hi == hello (dtest_demo.cpp | 18)
+        expected: 0x7fc089637948 == nullptr (dtest_demo.cpp | 19)
+        expected: a == b  (dtest_demo.cpp | 22)
+[======] completed 2 tests (0.3ms)
+[ pass ] 1 / 2
+[ FAIL ] 1 / 2
 ```
 
 ### Configuration
 
 These CMake variables can be modified for customization:
 
-1. `KTEST_MAX_TESTS`: Max number of tests that can be accommodated (default: `1024`)
-1. `KTEST_FAIL_RETURN_CODE`: Return code on test failure (`int`)
-1. `KTEST_MULTITHREADED` : Whether `ktest::main` uses multiple threads
+1. `DTEST_FAIL_RETURN_CODE`: Return code on test failure (`int`)
+1. `DTEST_MULTITHREADED` : Whether `dtest::main` uses multiple threads (`bool`)
 
 ## Contributing
 
 Pull/merge requests are welcome.
 
-**[Original repository](https://github.com/karnkaul/ktest)**
+**[Original repository](https://github.com/karnkaul/dtest)**

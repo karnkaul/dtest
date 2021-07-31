@@ -1,4 +1,4 @@
-#include <array>
+#include <cassert>
 #include <chrono>
 #include <exception>
 #include <filesystem>
@@ -7,9 +7,9 @@
 #include <iostream>
 #include <mutex>
 #include <sstream>
-#include <ktest/ktest.hpp>
+#include <dumb_test/dtest.hpp>
 
-namespace ktest {
+namespace dtest {
 using namespace std::chrono;
 
 namespace {
@@ -31,13 +31,13 @@ struct test_failed : std::exception {};
 class runner_t {
   public:
 	inline static std::mutex s_mutex;
-	inline static std::vector<test_t*> s_tests;
-	inline static std::vector<test_t*> s_failed;
+	inline static std::vector<atest_t*> s_tests;
+	inline static std::vector<atest_t*> s_failed;
 
-	static void run(test_t* test) {
+	static void run(atest_t* test) {
 		try {
-			test->func(test->helper);
-			if (!test->helper.fails.empty()) {
+			(*test)();
+			if (!test->fails.empty()) {
 				auto lock = std::scoped_lock(s_mutex);
 				s_failed.push_back(test);
 			}
@@ -46,11 +46,16 @@ class runner_t {
 			s_failed.push_back(test);
 		}
 		std::stringstream str;
-		if (!test->helper.fails.empty()) {
+		if (!test->fails.empty()) {
 			fmt_str(str, "[ FAIL ] {}\n", test->name);
-			for (auto const& expr : test->helper.fails) {
-				auto const file = std::filesystem::path(expr.file).filename().string();
-				fmt_str(str, " \t{}: {}  ({} | {})\n", (expr.required ? "required" : "expected"), expr.str, file, expr.line);
+			for (auto const& e : test->fails) {
+				auto const file = std::filesystem::path(e.file).filename().string();
+				std::string_view const exp = e.required ? "required" : "expected";
+				if (!e.a.empty() && !e.b.empty()) {
+					fmt_str(str, " \t{}: {} {} {} ({} | {})\n", exp, e.a, detail::op_str(e.op), e.b, file, e.line);
+				} else {
+					fmt_str(str, " \t{}: {}  ({} | {})\n", exp, e.expr, file, e.line);
+				}
 			}
 			std::cerr << str.str();
 		} else {
@@ -72,33 +77,33 @@ std::string pretty_time(duration<float, std::ratio<1, 1000>> dt) {
 	return str.str();
 }
 
-std::size_t s_test_idx = 0;
-std::array<test_t*, KTEST_MAX_TESTS> g_tests = {};
+struct {
+	atest_t* head{};
+	atest_t* tail{};
+} g_ends;
 } // namespace
 
-test_t::test_t(std::string_view name, func_t func) : name(name), func(func) {
-	if (s_test_idx == g_tests.size()) {
-		std::cerr << "ERROR: Max test limit exceeded: " << g_tests.size() << '\n';
-		std::terminate();
+atest_t::atest_t(std::string_view name) noexcept : name(name) {
+	if (!g_ends.tail) {
+		g_ends.tail = g_ends.head = this;
+		return;
 	}
-	g_tests[s_test_idx++] = this;
+	g_ends.tail->next = this;
+	g_ends.tail = g_ends.tail->next;
+	assert(g_ends.tail->next == nullptr);
 }
 
-void helper_t::check(expr_t const& expr, bool required) {
+void atest_t::check(expr_t expr, bool required) {
 	if (!expr.pass) {
-		fails.push_back(expr);
-		if (required) {
-			fails.back().required = true;
-			throw test_failed{};
-		}
+		fails.push_back(std::move(expr));
+		if (required) { throw test_failed{}; }
 	}
 }
 
 int run_tests(bool async) {
 	runner_t::s_tests.clear();
-	for (auto test : g_tests) {
-		if (test) { runner_t::s_tests.push_back(test); }
-	}
+	runner_t::s_failed.clear();
+	for (auto it = g_ends.head; it != nullptr; it = it->next) { runner_t::s_tests.push_back(it); }
 	std::vector<std::future<void>> futures;
 	if (async) { futures.reserve(runner_t::s_tests.size()); }
 	auto const start = steady_clock::now();
@@ -119,8 +124,8 @@ int run_tests(bool async) {
 	log("[ pass ] {} / {}\n", passed, total);
 	if (failed > 0) {
 		log("[ FAIL ] {} / {}\n", failed, total);
-		return KTEST_FAIL_RETURN_CODE;
+		return DTEST_FAIL_RETURN_CODE;
 	}
 	return 0;
 }
-} // namespace ktest
+} // namespace dtest

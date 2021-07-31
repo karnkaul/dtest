@@ -1,3 +1,3 @@
-#include <ktest/ktest.hpp>
+#include <dumb_test/dtest.hpp>
 
-int main() { return ktest::run_tests(KTEST_MULTITHREADED); }
+int main() { return dtest::run_tests(DTEST_MULTITHREADED); }
