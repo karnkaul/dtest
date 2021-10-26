@@ -7,7 +7,7 @@ namespace dtest {
 enum class oper { eq, neq, lt, le, gt, ge };
 
 namespace detail {
-constexpr std::string_view g_ops[] = {"==", "!="};
+constexpr std::string_view g_ops[] = {"==", "!=", "<", "<=", ">", ">="};
 constexpr std::string_view op_str(oper op) { return g_ops[static_cast<std::size_t>(op)]; }
 
 inline std::string expr(std::string_view l, std::string_view r, oper op) {
