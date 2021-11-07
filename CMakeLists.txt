@@ -19,7 +19,12 @@ target_include_directories(dtest PUBLIC include PRIVATE src)
 add_library(dtest-main src/main_lib.cpp)
 add_library(dtest::main ALIAS dtest-main)
 target_compile_definitions(dtest-main PRIVATE DTEST_MULTITHREADED=${DTEST_MULTITHREADED})
-target_link_libraries(dtest-main PUBLIC dtest::dtest)
+target_link_libraries(dtest-main 
+  PUBLIC
+    dtest::dtest
+  PRIVATE
+    $<$<STREQUAL:${CMAKE_SYSTEM_NAME},Linux>:pthread>
+)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(dtest PRIVATE /MP)
