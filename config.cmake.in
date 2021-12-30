@@ -1,0 +1,15 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/dtest-targets.cmake")
+
+set(_supported_components dtest dtest-main)
+
+foreach(_comp ${dtest_FIND_COMPONENTS})
+  if (NOT _comp IN_LIST _supported_components)
+    set(dtest_FOUND False)
+    set(dtest_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
+  endif()
+  include("${CMAKE_CURRENT_LIST_DIR}/dtest${_comp}-targets.cmake")
+endforeach()
+
+check_required_components(dtest)
