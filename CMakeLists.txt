@@ -13,7 +13,7 @@ set(FETCHCONTENT_QUIET OFF)
 FetchContent_Declare(
   cmake-utils
   GIT_REPOSITORY https://github.com/karnkaul/cmake-utils
-  GIT_TAG v1.0
+  GIT_TAG v1.0.1
 )
 FetchContent_MakeAvailable(cmake-utils)
 FetchContent_GetProperties(cmake-utils)
@@ -59,8 +59,5 @@ target_link_libraries(dtest-main
 )
 
 include("${cmake-utils_SOURCE_DIR}/cmake-utils.cmake")
-install_and_export_target(${PROJECT_NAME})
-install_target(${PROJECT_NAME}-main ${PROJECT_NAME})
-install_pkg_config(${PROJECT_NAME}-main)
-install_pkg_version(${PROJECT_NAME}-main ${${PROJECT_NAME}_version})
-export_target_to_build_tree(${PROJECT_NAME}-main ${PROJECT_NAME})
+install_and_export_target(TARGET ${PROJECT_NAME})
+install_and_export_target(TARGET ${PROJECT_NAME}-main NAMESPACE ${PROJECT_NAME} NOHEADERS)
